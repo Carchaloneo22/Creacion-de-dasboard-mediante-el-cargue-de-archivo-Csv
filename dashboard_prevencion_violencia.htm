@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Prevención de Violencia - Secretaría del Interior</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --rosa: #be185d;
+            --rosa-vivo: #db2777;
+            --rosa-claro: #fce7f3;
+            --naranja: #f97316;
+            --verde: #10b981;
+            --amarillo: #facc15;
+            --azul: #3b82f6;
+            --morado: #8b5cf6;
+            --gris-oscuro: #0f172a;
+            --gris-medio: #334155;
+            --gris-claro: #64748b;
+            --fondo: #f1f5f9;
+            --blanco: #ffffff;
+            --borde: #e2e8f0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Sora', sans-serif;
+            background: var(--fondo);
+            color: var(--gris-oscuro);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1700px; margin: 0 auto; }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, #6d0537 0%, #be185d 45%, #db2777 75%, #f43f8e 100%);
+            border-radius: 24px;
+            padding: 32px 36px;
+            margin-bottom: 24px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute; top: -60px; right: -60px;
+            width: 250px; height: 250px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        .header::after {
+            content: '';
+            position: absolute; bottom: -80px; right: 120px;
+            width: 180px; height: 180px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+        .header-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+        .header h1 { font-size: 1.75rem; font-weight: 800; display: flex; align-items: center; gap: 12px; }
+        .header h1 i { color: var(--amarillo); }
+        .header-sub { font-size: 0.82rem; opacity: 0.85; margin-top: 6px; font-weight: 400; }
+        .header-badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+        .hbadge { background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); padding: 7px 16px; border-radius: 30px; font-size: 0.74rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .hbadge i { color: var(--amarillo); }
+        .btn-upload-sm { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-family: 'Sora', sans-serif; font-weight: 600; font-size: 0.8rem; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+        .btn-upload-sm:hover { background: rgba(255,255,255,0.3); }
+
+        /* UPLOAD */
+        .upload-area {
+            background: white;
+            border-radius: 20px;
+            padding: 36px;
+            margin-bottom: 24px;
+            text-align: center;
+            border: 2px dashed var(--borde);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover { border-color: var(--rosa-vivo); background: var(--rosa-claro); }
+        .upload-area i { font-size: 2.2rem; color: var(--rosa-vivo); margin-bottom: 10px; display: block; }
+        .upload-area h3 { font-size: 1rem; font-weight: 700; color: var(--gris-oscuro); }
+        .upload-area p { font-size: 0.8rem; color: var(--gris-claro); margin-top: 4px; }
+        .upload-area input { display: none; }
+        .file-info { margin-top: 12px; font-size: 0.8rem; color: var(--rosa-vivo); font-weight: 600; }
+
+        /* FILTERS */
+        .filters-bar {
+            background: white;
+            border-radius: 16px;
+            padding: 18px 22px;
+            margin-bottom: 22px;
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+        .filter-group { flex: 1; min-width: 140px; }
+        .filter-group label { display: block; font-size: 0.67rem; font-weight: 700; color: var(--gris-claro); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .filter-group select { width: 100%; padding: 9px 12px; border: 1.5px solid var(--borde); border-radius: 10px; font-size: 0.82rem; background: white; cursor: pointer; font-family: 'Sora', sans-serif; color: var(--gris-medio); transition: border-color 0.2s; }
+        .filter-group select:focus { outline: none; border-color: var(--rosa-vivo); }
+        .btn-reset { background: var(--rosa-claro); border: 1.5px solid #fbcfe8; color: var(--rosa); padding: 9px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.82rem; font-family: 'Sora', sans-serif; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .btn-reset:hover { background: var(--rosa-vivo); color: white; }
+
+        /* INSIGHT */
+        .insight-box {
+            background: linear-gradient(135deg, #fffbeb, #fef9e3);
+            border-left: 4px solid var(--amarillo);
+            border-radius: 14px;
+            padding: 14px 20px;
+            margin-bottom: 22px;
+            font-size: 0.85rem;
+            color: var(--gris-medio);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .insight-box i { color: #d97706; font-size: 1.1rem; flex-shrink: 0; }
+
+        /* SECTION TITLE */
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            margin: 28px 0 14px 0;
+            padding-left: 14px;
+            border-left: 4px solid var(--rosa-vivo);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--gris-oscuro);
+        }
+        .section-title i { color: var(--rosa-vivo); }
+
+        /* KPIs */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 14px; margin-bottom: 22px; }
+        .kpi-card {
+            background: white;
+            border-radius: 18px;
+            padding: 18px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            border: 1.5px solid var(--borde);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.09); }
+        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 18px 18px 0 0; }
+        .kpi-card.rosa::before { background: linear-gradient(90deg, #be185d, #f43f8e); }
+        .kpi-card.verde::before { background: linear-gradient(90deg, #059669, #10b981); }
+        .kpi-card.naranja::before { background: linear-gradient(90deg, #ea580c, #f97316); }
+        .kpi-card.azul::before { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+        .kpi-card.morado::before { background: linear-gradient(90deg, #7c3aed, #8b5cf6); }
+        .kpi-card.amarillo::before { background: linear-gradient(90deg, #d97706, #facc15); }
+        .kpi-card.gris::before { background: linear-gradient(90deg, #475569, #64748b); }
+        .kpi-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; font-size: 1rem; }
+        .kpi-icon.rosa { background: #fce7f3; color: var(--rosa-vivo); }
+        .kpi-icon.verde { background: #d1fae5; color: #059669; }
+        .kpi-icon.naranja { background: #ffedd5; color: #ea580c; }
+        .kpi-icon.azul { background: #dbeafe; color: #2563eb; }
+        .kpi-icon.morado { background: #ede9fe; color: #7c3aed; }
+        .kpi-icon.amarillo { background: #fef9c3; color: #d97706; }
+        .kpi-icon.gris { background: #f1f5f9; color: #475569; }
+        .kpi-title { font-size: 0.67rem; font-weight: 700; color: var(--gris-claro); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .kpi-value { font-size: 1.85rem; font-weight: 800; color: var(--gris-oscuro); line-height: 1; }
+        .kpi-sub { font-size: 0.7rem; color: var(--gris-claro); margin-top: 4px; }
+
+        /* CHARTS */
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 18px; margin-bottom: 22px; }
+        .charts-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 22px; }
+        .chart-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            border: 1.5px solid var(--borde);
+        }
+        .chart-title { font-size: 0.88rem; font-weight: 700; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1.5px solid #f1f5f9; display: flex; align-items: center; gap: 8px; }
+        .chart-title i { color: var(--rosa-vivo); }
+        .chart-container { position: relative; height: 270px; }
+        .chart-container.tall { height: 320px; }
+        .chart-container.short { height: 200px; }
+
+        /* RESPONSABLES TABLE */
+        .resp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 22px; }
+        .resp-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            border: 1.5px solid var(--borde);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .resp-avatar { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, var(--rosa), var(--naranja)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
+        .resp-name { font-size: 0.85rem; font-weight: 700; color: var(--gris-oscuro); }
+        .resp-meta { font-size: 0.72rem; color: var(--gris-claro); margin-top: 2px; }
+        .resp-count { margin-left: auto; background: var(--rosa-claro); color: var(--rosa); font-size: 0.78rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; }
+
+        /* ACTIVIDADES DETALLE */
+        .actividad-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin-bottom: 10px;
+            border: 1.5px solid var(--borde);
+            box-shadow: 0 1px 6px rgba(0,0,0,0.03);
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 14px;
+            align-items: start;
+        }
+        .act-num { background: var(--rosa-claro); color: var(--rosa-vivo); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; }
+        .act-title { font-size: 0.88rem; font-weight: 700; color: var(--gris-oscuro); margin-bottom: 4px; }
+        .act-desc { font-size: 0.75rem; color: var(--gris-claro); line-height: 1.5; }
+        .act-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .tag { font-size: 0.68rem; padding: 3px 9px; border-radius: 20px; font-weight: 600; }
+        .tag-linea { background: #fce7f3; color: var(--rosa); }
+        .tag-lugar { background: #ede9fe; color: #7c3aed; }
+        .tag-zona { background: #d1fae5; color: #059669; }
+        .tag-fecha { background: #dbeafe; color: #2563eb; }
+        .tag-dur { background: #fef9c3; color: #d97706; }
+        .act-personas { text-align: right; }
+        .act-personas-num { font-size: 1.4rem; font-weight: 800; color: var(--rosa-vivo); display: block; }
+        .act-personas-label { font-size: 0.65rem; color: var(--gris-claro); }
+
+        /* TABLE */
+        .table-container { background: white; border-radius: 20px; padding: 18px; margin-bottom: 22px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.04); border: 1.5px solid var(--borde); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+        th { background: #f8fafc; padding: 10px 10px; text-align: left; font-weight: 700; border-bottom: 2px solid var(--borde); color: var(--gris-claro); font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        td { padding: 9px 10px; border-bottom: 1px solid #f1f5f9; color: var(--gris-medio); }
+        tr:hover td { background: #fdf2f8; }
+        .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; display: inline-block; }
+        .badge-ejecutada { background: #d1fae5; color: #065f46; }
+        .badge-agendada { background: #fef3c7; color: #92400e; }
+        .badge-cancelada { background: #fee2e2; color: #991b1b; }
+        .badge-default { background: #f1f5f9; color: var(--gris-medio); }
+        .num-badge { background: var(--rosa-claro); color: var(--rosa); padding: 2px 8px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 600; }
+
+        /* PAGINATION */
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+        .pagination button { background: #f1f5f9; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--gris-medio); font-family: 'Sora', sans-serif; }
+        .pagination button:hover:not(:disabled) { background: var(--rosa-vivo); color: white; }
+        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagination .page-info { background: #f8fafc; padding: 8px 14px; border-radius: 8px; font-size: 0.76rem; color: var(--gris-claro); font-weight: 600; }
+
+        /* DURACIÓN BARS */
+        .dur-bar-wrap { display: flex; flex-direction: column; gap: 8px; }
+        .dur-bar-row { display: grid; grid-template-columns: 120px 1fr 50px; align-items: center; gap: 10px; }
+        .dur-bar-label { font-size: 0.72rem; color: var(--gris-medio); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dur-bar-track { height: 10px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+        .dur-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--rosa), var(--naranja)); transition: width 0.6s ease; }
+        .dur-bar-val { font-size: 0.7rem; color: var(--gris-claro); font-family: 'DM Mono', monospace; text-align: right; }
+
+        /* SUMMARY CARDS ROW */
+        .summary-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 22px; }
+        .summary-card { background: white; border-radius: 16px; padding: 18px; border: 1.5px solid var(--borde); box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+        .summary-card-title { font-size: 0.72rem; font-weight: 700; color: var(--gris-claro); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .summary-card-title i { color: var(--rosa-vivo); }
+
+        /* GENERO BAR */
+        .genero-bar { border-radius: 99px; height: 18px; display: flex; overflow: hidden; margin: 8px 0; }
+        .genero-seg { display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: white; transition: width 0.5s; }
+        .genero-legend { display: flex; gap: 14px; margin-top: 6px; }
+        .genero-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+        .genero-label { font-size: 0.72rem; color: var(--gris-medio); display: flex; align-items: center; gap: 5px; }
+
+        /* HEATMAP */
+        .heatmap-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .heat-cell { aspect-ratio: 1; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; color: white; cursor: default; transition: transform 0.15s; }
+        .heat-cell:hover { transform: scale(1.15); }
+        .heat-label { font-size: 0.62rem; color: var(--gris-claro); text-align: center; font-weight: 600; padding-bottom: 2px; }
+
+        /* PROGRESS CIRCLES */
+        .prog-circle-wrap { display: flex; gap: 16px; justify-content: space-around; flex-wrap: wrap; }
+        .prog-circle { text-align: center; }
+        .prog-circle svg { width: 80px; height: 80px; transform: rotate(-90deg); }
+        .prog-circle circle { fill: none; stroke-width: 8; }
+        .prog-track { stroke: #f1f5f9; }
+        .prog-fill { stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+        .prog-label { font-size: 0.72rem; font-weight: 700; color: var(--gris-oscuro); margin-top: 6px; }
+        .prog-pct { font-size: 0.85rem; font-weight: 800; color: var(--rosa-vivo); }
+
+        /* FOOTER */
+        .footer { text-align: center; padding: 20px; color: var(--gris-claro); font-size: 0.7rem; border-top: 1.5px solid var(--borde); margin-top: 20px; }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--rosa-vivo); border-radius: 10px; }
+
+        .no-data { text-align: center; padding: 40px; color: #94a3b8; font-size: 0.85rem; }
+
+        @media (max-width: 768px) {
+            .charts-grid, .charts-grid-3 { grid-template-columns: 1fr; }
+            .kpi-value { font-size: 1.5rem; }
+            .header h1 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-top">
+            <div>
+                <h1><i class="fas fa-shield-heart"></i> Dashboard Prevención de Violencia</h1>
+                <p class="header-sub">Secretaría del Interior · Alcaldía de Bucaramanga · Análisis integral de gestión y cobertura</p>
+            </div>
+            <label class="btn-upload-sm" for="fileInput"><i class="fas fa-upload"></i> Cargar CSV</label>
+        </div>
+        <div class="header-badges">
+            <div class="hbadge"><i class="fas fa-database"></i> Registros: <strong id="totalRecords">0</strong></div>
+            <div class="hbadge"><i class="fas fa-file-csv"></i> Archivo: <span id="fileName">Ninguno</span></div>
+            <div class="hbadge"><i class="fas fa-users"></i> Personas: <strong id="totalPersonasHeader">0</strong></div>
+            <div class="hbadge"><i class="fas fa-calendar"></i> Actualizado: <span id="updateDate"></span></div>
+        </div>
+        <input type="file" id="fileInput" accept=".csv" style="display:none">
+    </div>
+
+    <!-- UPLOAD AREA (visible cuando no hay datos) -->
+    <div class="upload-area" id="uploadArea">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <h3>Arrastra o haz clic para cargar tu CSV</h3>
+        <p>Archivo: PREVENCINDEVIOLENCIA_DATA_LABELS_*.csv (separado por punto y coma)</p>
+        <div class="file-info" id="fileInfo"></div>
+    </div>
+
+    <div id="dashboardContent" style="display:none;">
+
+        <!-- FILTROS -->
+        <div class="filters-bar">
+            <div class="filter-group">
+                <label><i class="fas fa-tag"></i> Línea Estratégica</label>
+                <select id="lineaFilter"><option value="all">Todas las líneas</option></select>
+            </div>
+            <div class="filter-group">
+                <label><i class="fas fa-circle-check"></i> Estado</label>
+                <select id="estadoFilter"><option value="all">Todos los estados</option></select>
+            </div>
+            <div class="filter-group">
+                <label><i class="fas fa-map-marker-alt"></i> Zona</label>
+                <select id="zonaFilter"><option value="all">Todas las zonas</option></select>
+            </div>
+            <div class="filter-group">
+                <label><i class="fas fa-user"></i> Responsable</label>
+                <select id="responsableFilter"><option value="all">Todos</option></select>
+            </div>
+            <div class="filter-group">
+                <label><i class="fas fa-clock"></i> Mes</label>
+                <select id="mesFilter"><option value="all">Todos los meses</option></select>
+            </div>
+            <button class="btn-reset" id="resetFilters"><i class="fas fa-undo-alt"></i> Resetear</button>
+        </div>
+
+        <!-- INSIGHT BOX -->
+        <div class="insight-box">
+            <i class="fas fa-lightbulb"></i>
+            <div><strong>Resumen ejecutivo:</strong> <span id="executiveSummary">Cargando...</span></div>
+        </div>
+
+        <!-- KPIs PRINCIPALES -->
+        <div class="section-title"><i class="fas fa-chart-simple"></i> Indicadores Clave de Gestión</div>
+        <div class="kpi-grid" id="kpiPrincipales"></div>
+
+        <!-- KPIs POBLACIÓN -->
+        <div class="section-title"><i class="fas fa-users"></i> Impacto por Tipo de Población</div>
+        <div class="kpi-grid" id="kpiPoblacion"></div>
+
+        <!-- GRÁFICAS ROW 1 -->
+        <div class="section-title"><i class="fas fa-chart-bar"></i> Distribución por Línea y Estado</div>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-layer-group"></i> Actividades por Línea Estratégica</div>
+                <div class="chart-container"><canvas id="lineasChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-chart-pie"></i> Estado de Actividades</div>
+                <div class="chart-container"><div id="estadosPieChart" style="height:270px"></div></div>
+            </div>
+        </div>
+
+        <!-- GÉNERO Y COBERTURA -->
+        <div class="section-title"><i class="fas fa-venus-mars"></i> Análisis de Género y Cobertura</div>
+        <div class="summary-row">
+            <div class="summary-card">
+                <div class="summary-card-title"><i class="fas fa-venus-mars"></i> Distribución de Género</div>
+                <div class="genero-bar" id="generoBarra"></div>
+                <div class="genero-legend" id="generoLegend"></div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title"><i class="fas fa-bullseye"></i> Tasa de Cobertura por Línea</div>
+                <div class="prog-circle-wrap" id="coberturaCircles"></div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title"><i class="fas fa-clock"></i> Duración Promedio por Línea</div>
+                <div class="dur-bar-wrap" id="duracionBars"></div>
+            </div>
+        </div>
+
+        <!-- GRÁFICAS ROW 2 -->
+        <div class="section-title"><i class="fas fa-chart-line"></i> Evolución Temporal y Población</div>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-calendar-days"></i> Actividades por Fecha</div>
+                <div class="chart-container"><canvas id="evolucionChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-chart-pie"></i> Distribución Población Impactada</div>
+                <div class="chart-container"><div id="poblacionPieChart" style="height:270px"></div></div>
+            </div>
+        </div>
+
+        <!-- GRÁFICAS ROW 3 -->
+        <div class="section-title"><i class="fas fa-map"></i> Geografía y Tipo de Lugar</div>
+        <div class="charts-grid-3">
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-map-marked-alt"></i> Zona (Urbana vs Rural)</div>
+                <div class="chart-container short"><div id="zonaPieChart" style="height:200px"></div></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-building"></i> Tipo de Establecimiento</div>
+                <div class="chart-container short"><canvas id="lugaresChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-location-dot"></i> Top Lugares de Actividad</div>
+                <div class="chart-container short"><canvas id="topLugaresChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- GRÁFICA PERSONAS POR ACTIVIDAD -->
+        <div class="section-title"><i class="fas fa-user-group"></i> Personas Impactadas por Actividad</div>
+        <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-chart-bar"></i> Personas por Actividad (Top 15 con más impacto)</div>
+            <div class="chart-container tall"><canvas id="personasChart"></canvas></div>
+        </div>
+
+        <!-- GRÁFICA LÍNEA x PERSONAS -->
+        <div class="section-title"><i class="fas fa-people-group"></i> Análisis de Población por Línea</div>
+        <div class="chart-card">
+            <div class="chart-title"><i class="fas fa-chart-bar"></i> Composición de Población por Línea Estratégica</div>
+            <div class="chart-container tall"><canvas id="poblacionLineaChart"></canvas></div>
+        </div>
+
+        <!-- RESPONSABLES -->
+        <div class="section-title"><i class="fas fa-id-card"></i> Equipo Responsable</div>
+        <div class="resp-grid" id="responsablesGrid"></div>
+
+        <!-- DETALLE ACTIVIDADES -->
+        <div class="section-title"><i class="fas fa-list-check"></i> Detalle de Actividades Recientes</div>
+        <div id="actividadesDetalle"></div>
+
+        <!-- TABLA COMPLETA -->
+        <div class="section-title"><i class="fas fa-table-list"></i> Registro Completo</div>
+        <div class="table-container">
+            <div id="fullTableContainer"></div>
+            <div id="paginationControls" class="pagination"></div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <p><i class="fas fa-shield-heart"></i> Dashboard de Prevención de Violencia · Secretaría del Interior · Alcaldía de Bucaramanga</p>
+        <p style="margin-top:4px;">Líneas: Somos Familia · Creciendo Seguros · Construyendo Relaciones Sanas · Comunicación y Difusión</p>
+    </div>
+</div>
+
+<script>
+// ─────────────────── ESTADO GLOBAL ───────────────────
+let rawData = [];
+let currentData = [];
+let charts = {};
+let apexCharts = {};
+let currentPage = 1;
+let rowsPerPage = 15;
+let totalPages = 1;
+
+// Colores marca
+const COLORS = {
+    rosa: '#db2777', naranja: '#f97316', verde: '#10b981',
+    azul: '#3b82f6', morado: '#8b5cf6', amarillo: '#facc15',
+    cian: '#06b6d4', rojo: '#ef4444', gris: '#64748b'
+};
+const LINEA_COLORS = {
+    'SOMOS FAMILIA': COLORS.rosa,
+    'CRECIENDO SEGUROS': COLORS.naranja,
+    'CONSTRUYENDO RELACIONES SANAS': COLORS.morado,
+    'COMUNICACION Y DIFUCION': COLORS.azul
+};
+const LINEA_ICONS = {
+    'SOMOS FAMILIA': '👨‍👩‍👧',
+    'CRECIENDO SEGUROS': '🛡️',
+    'CONSTRUYENDO RELACIONES SANAS': '🤝',
+    'COMUNICACION Y DIFUCION': '📢'
+};
+
+document.getElementById('updateDate').innerText = new Date().toLocaleDateString('es-CO');
+
+// ─────────────────── CARGA DE ARCHIVO ───────────────────
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = '#db2777'; });
+uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#e2e8f0'; });
+uploadArea.addEventListener('drop', e => {
+    e.preventDefault(); uploadArea.style.borderColor = '#e2e8f0';
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.csv')) processFile(file);
+    else alert('Por favor sube un archivo CSV');
+});
+fileInput.addEventListener('change', e => { if (e.target.files.length > 0) processFile(e.target.files[0]); });
+
+function processFile(file) {
+    document.getElementById('fileName').innerText = file.name;
+    document.getElementById('fileInfo').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+    Papa.parse(file, {
+        header: true, delimiter: ';', encoding: 'UTF-8', skipEmptyLines: true,
+        complete: results => {
+            rawData = results.data.map(parseRow);
+            currentData = [...rawData];
+            document.getElementById('fileInfo').innerHTML = `<i class="fas fa-check-circle"></i> ${rawData.length} registros cargados`;
+            document.getElementById('totalRecords').innerText = rawData.length;
+            document.getElementById('uploadArea').style.display = 'none';
+            document.getElementById('dashboardContent').style.display = 'block';
+            loadFilters();
+            updateDashboard();
+        },
+        error: err => { document.getElementById('fileInfo').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error: ' + err.message; }
+    });
+}
+
+// ─────────────────── PARSEO DE FILA ───────────────────
+function g(row, key) {
+    const v = row[key]; return (v === undefined || v === null) ? '' : String(v).trim();
+}
+function gi(row, key) { return parseInt(g(row, key)) || 0; }
+
+function parseRow(r) {
+    const linea = g(r,'SOMOS FAMILIA:') ? 'SOMOS FAMILIA'
+        : g(r,'Creciendo Seguro:') ? 'CRECIENDO SEGUROS'
+        : g(r,'Construyendo Relaciones Sanas:') ? 'CONSTRUYENDO RELACIONES SANAS'
+        : g(r,'Comunicación y difusión :') ? 'COMUNICACION Y DIFUCION' : '';
+
+    const tipo_lugar = (() => {
+        if (g(r,'Ágora:')) return 'Ágora';
+        if (g(r,'CAIS o Estaciones de Policía:')) return 'CAIS / Policía';
+        if (g(r,'Cancha o Escenario Deportivo:')) return 'Cancha Deportiva';
+        if (g(r,'Hospital, Clínica o Centro de Salud:')) return 'Hospital / Clínica';
+        if (g(r,'Institución de Educación Superior:')) return 'Inst. Ed. Superior';
+        if (g(r,'Institución Educativa:')) return 'Inst. Educativa';
+        if (g(r,'Institución Religiosa:')) return 'Inst. Religiosa';
+        if (g(r,'Parque o Zona Verde:')) return 'Parque / Zona Verde';
+        if (g(r,'Salón Comunal o Social, Casa de Reunión, o Centro Cultural :')) return 'Salón Comunal';
+        if (g(r,'Lugar conocido o dirección específica:')) return 'Lugar Conocido';
+        if (g(r,'Otro lugar de encuentro o dirección específica: ')) return 'Otro Lugar';
+        return 'No especificado';
+    })();
+
+    const estadoRaw = g(r,'La actividad se encuentra:');
+    const estado = estadoRaw.replace(/🟢|🟡|🔴/g,'').trim();
+
+    let dur = 0;
+    try {
+        const hi = g(r,'Hora de Inicio:').split(':').map(Number);
+        const hf = g(r,'Hora de Fin:').split(':').map(Number);
+        dur = (hf[0]*60+hf[1]) - (hi[0]*60+hi[1]);
+        if (dur < 0) dur = 0;
+    } catch(e) {}
+
+    const fecha = g(r,'Fecha Programada de la Actividad :');
+    let mes = '';
+    if (fecha) {
+        const parts = fecha.split('/');
+        if (parts.length >= 2) {
+            const meses = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+            mes = meses[parseInt(parts[1])] || parts[1];
+        }
+    }
+
+    return {
+        id: g(r,'Record ID'),
+        fecha, mes,
+        hora_inicio: g(r,'Hora de Inicio:'),
+        hora_fin: g(r,'Hora de Fin:'),
+        duracion_min: dur,
+        zona: g(r,'Actividad Rural o Urbana:'),
+        lugar_nombre: g(r,'Nombre del Lugar de la Actividad o Punto de Encuentro:'),
+        tipo_lugar,
+        otro_zona: g(r,'Otro Tipo de Zona:'),
+        zona_detalle: g(r,'Zona:'),
+        linea,
+        nombre_actividad: g(r,'    Nombre de la Actividad:'),
+        estado,
+        descripcion: g(r,'Descripción Breve de la Actividad:'),
+        resultados: g(r,'Resultados Esperados:(Descripción breve)'),
+        hay_impacto: g(r,'¿Hay población impactada?'),
+        adultos_mayores: gi(r,'ADULTOS MAYORES'),
+        estudiantes: gi(r,'ESTUDIANTES'),
+        jac_jal: gi(r,' JAC / JAL'),
+        lideres: gi(r,'LIDERES SOCIALES '),
+        nna: gi(r,'NNA '),
+        migrantes: gi(r,'MIGRANTES '),
+        mujer: gi(r,'MUJER'),
+        habitante_calle: gi(r,'HABITANTE DE CALLE'),
+        pob_diversa: gi(r,'POBLACIÓN SEXUALMENTE DIVERSA'),
+        def_ddhh: gi(r,'DEFENSORES DE DERECHOS HUMANOS'),
+        victimas: gi(r,'VICTIMAS DE CONFLICTO ARMADO'),
+        ciudadania: gi(r,'CIUDADANIA EN GENERAL '),
+        etnica: gi(r,'POBLACIÓN ETNICA'),
+        barrista: gi(r,'POBLACIÓN BARRISTA '),
+        hombres: gi(r,'HOMBRES'),
+        discapacidad: gi(r,'POBLACIÓN CON DISCAPACIDAD'),
+        total_personas: gi(r,'Total de Personas Impactadas:'),
+        responsable: g(r,'Nombre Completo del Responsable de la Actividad:'),
+        usuario: g(r,'Usuario:'),
+    };
+}
+
+// ─────────────────── FILTROS ───────────────────
+function loadFilters() {
+    const lineas = [...new Set(rawData.map(d=>d.linea).filter(Boolean))];
+    const estados = [...new Set(rawData.map(d=>d.estado).filter(Boolean))];
+    const zonas = [...new Set(rawData.map(d=>d.zona).filter(Boolean))];
+    const responsables = [...new Set(rawData.map(d=>d.responsable).filter(Boolean))].sort();
+    const meses = [...new Set(rawData.map(d=>d.mes).filter(Boolean))];
+
+    fillSelect('lineaFilter', lineas);
+    fillSelect('estadoFilter', estados);
+    fillSelect('zonaFilter', zonas);
+    fillSelect('responsableFilter', responsables);
+    fillSelect('mesFilter', meses);
+}
+function fillSelect(id, opts) {
+    const sel = document.getElementById(id);
+    const current = sel.innerHTML;
+    opts.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o; opt.textContent = o;
+        sel.appendChild(opt);
+    });
+}
+function filterData() {
+    const linea = document.getElementById('lineaFilter').value;
+    const estado = document.getElementById('estadoFilter').value;
+    const zona = document.getElementById('zonaFilter').value;
+    const resp = document.getElementById('responsableFilter').value;
+    const mes = document.getElementById('mesFilter').value;
+    currentData = rawData.filter(d => {
+        if (linea !== 'all' && d.linea !== linea) return false;
+        if (estado !== 'all' && d.estado !== estado) return false;
+        if (zona !== 'all' && d.zona !== zona) return false;
+        if (resp !== 'all' && d.responsable !== resp) return false;
+        if (mes !== 'all' && d.mes !== mes) return false;
+        return true;
+    });
+    currentPage = 1;
+    updateDashboard();
+}
+function resetFilters() {
+    ['lineaFilter','estadoFilter','zonaFilter','responsableFilter','mesFilter'].forEach(id => document.getElementById(id).value = 'all');
+    filterData();
+}
+['lineaFilter','estadoFilter','zonaFilter','responsableFilter','mesFilter'].forEach(id =>
+    document.getElementById(id).addEventListener('change', filterData));
+document.getElementById('resetFilters').addEventListener('click', resetFilters);
+
+// ─────────────────── DASHBOARD PRINCIPAL ───────────────────
+function updateDashboard() {
+    document.getElementById('totalRecords').innerText = currentData.length;
+    const totalP = currentData.reduce((s,d)=>s+d.total_personas,0);
+    document.getElementById('totalPersonasHeader').innerText = totalP.toLocaleString('es-CO');
+    updateInsight();
+    updateKPIs();
+    updatePoblacionKPIs();
+    updateCharts();
+    updateGeneroCobertura();
+    updateResponsables();
+    updateActividadesDetalle();
+    renderFullTable();
+}
+
+// ─────────────────── INSIGHT ───────────────────
+function updateInsight() {
+    const total = currentData.length;
+    const ejec = currentData.filter(d=>d.estado.includes('EJECUTADA')).length;
+    const conImpacto = currentData.filter(d=>d.hay_impacto==='Yes').length;
+    const totalP = currentData.reduce((s,d)=>s+d.total_personas,0);
+    const pctEjec = total > 0 ? Math.round(ejec/total*100) : 0;
+    const durProm = currentData.filter(d=>d.duracion_min>0).reduce((s,d,_,a)=>s+d.duracion_min/a.filter(x=>x.duracion_min>0).length,0);
+    const topLinea = Object.entries(currentData.reduce((acc,d)=>{acc[d.linea]=(acc[d.linea]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('executiveSummary').innerHTML = `<strong>${total}</strong> actividades registradas · <strong>${ejec}</strong> ejecutadas (<strong>${pctEjec}%</strong>) · <strong>${conImpacto}</strong> con población impactada · <strong>${totalP.toLocaleString('es-CO')}</strong> personas beneficiadas · Duración promedio: <strong>${Math.round(durProm)} min</strong> · Línea más activa: <strong>${topLinea ? LINEA_ICONS[topLinea[0]]+ ' ' + topLinea[0] : '-'}</strong>`;
+}
+
+// ─────────────────── KPIs PRINCIPALES ───────────────────
+function updateKPIs() {
+    const total = currentData.length;
+    const ejec = currentData.filter(d=>d.estado.includes('EJECUTADA')).length;
+    const agend = currentData.filter(d=>d.estado.includes('AGENDADA')).length;
+    const cancel = currentData.filter(d=>d.estado.includes('CANCELADA')).length;
+    const conImpacto = currentData.filter(d=>d.hay_impacto==='Yes').length;
+    const totalP = currentData.reduce((s,d)=>s+d.total_personas,0);
+    const duraciones = currentData.filter(d=>d.duracion_min>0).map(d=>d.duracion_min);
+    const durProm = duraciones.length ? Math.round(duraciones.reduce((a,b)=>a+b,0)/duraciones.length) : 0;
+    const horas = Math.floor(currentData.reduce((s,d)=>s+d.duracion_min,0)/60);
+    const pctEjec = total > 0 ? Math.round(ejec/total*100) : 0;
+
+    const kpis = [
+        { title:'Total Actividades', value: total, sub: 'Período actual', color:'rosa', icon:'fa-calendar-check' },
+        { title:'Ejecutadas', value: ejec, sub: `${pctEjec}% del total`, color:'verde', icon:'fa-circle-check' },
+        { title:'Agendadas', value: agend, sub: 'Pendientes', color:'amarillo', icon:'fa-calendar-days' },
+        { title:'Canceladas', value: cancel, sub: 'Sin ejecutar', color:'naranja', icon:'fa-circle-xmark' },
+        { title:'Con Población Impactada', value: conImpacto, sub: `${total>0?Math.round(conImpacto/total*100):0}% de actividades`, color:'azul', icon:'fa-users' },
+        { title:'Personas Impactadas', value: totalP.toLocaleString('es-CO'), sub: 'Beneficiarios directos', color:'morado', icon:'fa-people-group' },
+        { title:'Duración Promedio', value: durProm+'min', sub: 'Por actividad', color:'rosa', icon:'fa-clock' },
+        { title:'Horas de Intervención', value: horas+'h', sub: 'Tiempo total acumulado', color:'verde', icon:'fa-hourglass-half' },
+    ];
+    document.getElementById('kpiPrincipales').innerHTML = kpis.map(k=>`
+        <div class="kpi-card ${k.color}">
+            <div class="kpi-icon ${k.color}"><i class="fas ${k.icon}"></i></div>
+            <div class="kpi-title">${k.title}</div>
+            <div class="kpi-value">${k.value}</div>
+            <div class="kpi-sub">${k.sub}</div>
+        </div>`).join('');
+}
+
+// ─────────────────── KPIs POBLACIÓN ───────────────────
+function updatePoblacionKPIs() {
+    const pops = [
+        { nombre:'NNA', campo:'nna', color:'naranja', icon:'fa-child' },
+        { nombre:'Mujeres', campo:'mujer', color:'rosa', icon:'fa-venus' },
+        { nombre:'Hombres', campo:'hombres', color:'azul', icon:'fa-mars' },
+        { nombre:'Ciudadanía Gral.', campo:'ciudadania', color:'verde', icon:'fa-city' },
+        { nombre:'Adultos Mayores', campo:'adultos_mayores', color:'morado', icon:'fa-person-cane' },
+        { nombre:'Estudiantes', campo:'estudiantes', color:'amarillo', icon:'fa-graduation-cap' },
+        { nombre:'Líderes Sociales', campo:'lideres', color:'rosa', icon:'fa-star' },
+        { nombre:'JAC / JAL', campo:'jac_jal', color:'azul', icon:'fa-people-roof' },
+        { nombre:'Víctimas Conflicto', campo:'victimas', color:'naranja', icon:'fa-hand-holding-heart' },
+        { nombre:'Pob. Diversa', campo:'pob_diversa', color:'morado', icon:'fa-rainbow' },
+        { nombre:'Migrantes', campo:'migrantes', color:'verde', icon:'fa-person-walking-luggage' },
+        { nombre:'Con Discapacidad', campo:'discapacidad', color:'gris', icon:'fa-wheelchair' },
+    ];
+    const totalPers = currentData.reduce((s,d)=>s+d.total_personas,0);
+    const result = pops.map(p=>{
+        const val = currentData.reduce((s,d)=>s+(d[p.campo]||0),0);
+        return {...p, val};
+    }).filter(p=>p.val>0).sort((a,b)=>b.val-a.val);
+
+    document.getElementById('kpiPoblacion').innerHTML = result.map(p=>`
+        <div class="kpi-card ${p.color}">
+            <div class="kpi-icon ${p.color}"><i class="fas ${p.icon}"></i></div>
+            <div class="kpi-title">${p.nombre}</div>
+            <div class="kpi-value">${p.val.toLocaleString('es-CO')}</div>
+            <div class="kpi-sub">${totalPers>0?Math.round(p.val/totalPers*100):0}% del total</div>
+        </div>`).join('') || '<div class="kpi-card gris"><div class="kpi-icon gris"><i class="fas fa-ban"></i></div><div class="kpi-title">Sin datos de población</div><div class="kpi-value">0</div></div>';
+}
+
+// ─────────────────── GÉNERO Y COBERTURA ───────────────────
+function updateGeneroCobertura() {
+    // Género
+    const totalM = currentData.reduce((s,d)=>s+d.mujer,0);
+    const totalH = currentData.reduce((s,d)=>s+d.hombres,0);
+    const totalD = currentData.reduce((s,d)=>s+d.pob_diversa,0);
+    const totalGTotal = totalM + totalH + totalD;
+    if (totalGTotal > 0) {
+        const pM = Math.round(totalM/totalGTotal*100);
+        const pH = Math.round(totalH/totalGTotal*100);
+        const pD = 100 - pM - pH;
+        document.getElementById('generoBarra').innerHTML = `
+            <div class="genero-seg" style="width:${pM}%;background:#db2777">${pM>8?pM+'%':''}</div>
+            <div class="genero-seg" style="width:${pH}%;background:#3b82f6">${pH>8?pH+'%':''}</div>
+            ${pD>0?`<div class="genero-seg" style="width:${pD}%;background:#8b5cf6">${pD>8?pD+'%':''}</div>`:''}`;
+        document.getElementById('generoLegend').innerHTML = `
+            <div class="genero-label"><div class="genero-dot" style="background:#db2777"></div>Mujeres ${totalM.toLocaleString('es-CO')} (${pM}%)</div>
+            <div class="genero-label"><div class="genero-dot" style="background:#3b82f6"></div>Hombres ${totalH.toLocaleString('es-CO')} (${pH}%)</div>
+            ${totalD>0?`<div class="genero-label"><div class="genero-dot" style="background:#8b5cf6"></div>Diversa ${totalD} (${pD}%)</div>`:''}`;
+    } else {
+        document.getElementById('generoBarra').innerHTML = '<div style="font-size:0.75rem;color:#94a3b8;padding:4px 0">Sin datos de género</div>';
+    }
+
+    // Cobertura por línea
+    const lineas = ['SOMOS FAMILIA','CRECIENDO SEGUROS','CONSTRUYENDO RELACIONES SANAS','COMUNICACION Y DIFUCION'];
+    const shortNames = { 'SOMOS FAMILIA':'Somos\nFamilia','CRECIENDO SEGUROS':'Creciendo\nSeguros','CONSTRUYENDO RELACIONES SANAS':'Constr.\nRelaciones','COMUNICACION Y DIFUCION':'Com. y\nDifusión' };
+    const totalActs = currentData.length;
+    document.getElementById('coberturaCircles').innerHTML = lineas.map(l=>{
+        const count = currentData.filter(d=>d.linea===l).length;
+        const pct = totalActs > 0 ? Math.round(count/totalActs*100) : 0;
+        const color = LINEA_COLORS[l] || '#db2777';
+        const r = 32; const circ = 2*Math.PI*r;
+        const offset = circ - (pct/100)*circ;
+        return `<div class="prog-circle">
+            <svg viewBox="0 0 80 80"><circle class="prog-track" cx="40" cy="40" r="${r}"/><circle class="prog-fill" cx="40" cy="40" r="${r}" stroke="${color}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/></svg>
+            <div class="prog-pct">${pct}%</div>
+            <div class="prog-label" style="white-space:pre;font-size:0.62rem">${shortNames[l]}</div>
+        </div>`;
+    }).join('');
+
+    // Duración por línea
+    const durData = lineas.map(l=>{
+        const acts = currentData.filter(d=>d.linea===l && d.duracion_min>0);
+        const avg = acts.length ? Math.round(acts.reduce((s,d)=>s+d.duracion_min,0)/acts.length) : 0;
+        return { linea: l, avg };
+    }).filter(d=>d.avg>0);
+    const maxDur = Math.max(...durData.map(d=>d.avg), 1);
+    document.getElementById('duracionBars').innerHTML = durData.map(d=>`
+        <div class="dur-bar-row">
+            <div class="dur-bar-label" title="${d.linea}">${d.linea.split(' ')[0]}</div>
+            <div class="dur-bar-track"><div class="dur-bar-fill" style="width:${Math.round(d.avg/maxDur*100)}%"></div></div>
+            <div class="dur-bar-val">${d.avg}min</div>
+        </div>`).join('') || '<div style="color:#94a3b8;font-size:0.78rem">Sin datos</div>';
+}
+
+// ─────────────────── RESPONSABLES ───────────────────
+function updateResponsables() {
+    const counts = {};
+    const lineasResp = {};
+    currentData.forEach(d=>{
+        if (!d.responsable) return;
+        counts[d.responsable] = (counts[d.responsable]||0) + 1;
+        if (!lineasResp[d.responsable]) lineasResp[d.responsable] = new Set();
+        if (d.linea) lineasResp[d.responsable].add(d.linea.split(' ')[0]);
+    });
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    document.getElementById('responsablesGrid').innerHTML = sorted.map(([name, count])=>{
+        const initials = name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+        const lineasStr = lineasResp[name] ? [...lineasResp[name]].join(', ') : '';
+        return `<div class="resp-card">
+            <div class="resp-avatar">${initials}</div>
+            <div>
+                <div class="resp-name">${name}</div>
+                <div class="resp-meta"><i class="fas fa-layer-group" style="color:#db2777;font-size:0.65rem;margin-right:4px"></i>${lineasStr}</div>
+            </div>
+            <div class="resp-count">${count} act.</div>
+        </div>`;
+    }).join('');
+}
+
+// ─────────────────── ACTIVIDADES DETALLE ───────────────────
+function updateActividadesDetalle() {
+    const recent = [...currentData].sort((a,b)=>{
+        const da = a.fecha.split('/').reverse().join('-');
+        const db = b.fecha.split('/').reverse().join('-');
+        return db.localeCompare(da);
+    }).slice(0,8);
+
+    document.getElementById('actividadesDetalle').innerHTML = recent.map((d,i)=>{
+        const color = LINEA_COLORS[d.linea] || '#db2777';
+        const dur = d.duracion_min > 0 ? `${d.duracion_min}min` : '-';
+        const lugar = d.otro_zona || d.tipo_lugar || '-';
+        return `<div class="actividad-card">
+            <div class="act-num" style="background:${color}20;color:${color}">${d.id || (i+1)}</div>
+            <div>
+                <div class="act-title">${esc(d.nombre_actividad || 'Sin nombre')}</div>
+                <div class="act-desc">${esc((d.descripcion||'').substring(0,140))}${(d.descripcion||'').length>140?'…':''}</div>
+                <div class="act-meta">
+                    ${d.linea ? `<span class="tag tag-linea">${LINEA_ICONS[d.linea]||''} ${d.linea.split(' ')[0]}</span>` : ''}
+                    ${d.fecha ? `<span class="tag tag-fecha"><i class="fas fa-calendar" style="font-size:0.6rem"></i> ${d.fecha}</span>` : ''}
+                    ${d.duracion_min > 0 ? `<span class="tag tag-dur"><i class="fas fa-clock" style="font-size:0.6rem"></i> ${dur}</span>` : ''}
+                    ${lugar !== '-' ? `<span class="tag tag-lugar" title="${esc(lugar)}">${esc(lugar.substring(0,30))}</span>` : ''}
+                    ${d.zona ? `<span class="tag tag-zona">${d.zona}</span>` : ''}
+                    ${d.responsable ? `<span class="tag" style="background:#f1f5f9;color:#475569">${esc(d.responsable.split(' ').slice(0,2).join(' '))}</span>` : ''}
+                </div>
+            </div>
+            <div class="act-personas">
+                <span class="act-personas-num">${d.total_personas > 0 ? d.total_personas.toLocaleString('es-CO') : '-'}</span>
+                <span class="act-personas-label">personas</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ─────────────────── GRÁFICAS ───────────────────
+function destroyChart(id) {
+    if (charts[id]) { try { charts[id].destroy(); } catch(e){} charts[id] = null; }
+    if (apexCharts[id]) { try { apexCharts[id].destroy(); } catch(e){} apexCharts[id] = null; }
+}
+
+function updateCharts() {
+    // 1. LÍNEAS ESTRATÉGICAS
+    destroyChart('lineas');
+    const lineasNames = ['SOMOS FAMILIA','CRECIENDO SEGUROS','CONSTRUYENDO RELACIONES SANAS','COMUNICACION Y DIFUCION'];
+    const lineasCount = lineasNames.map(l => currentData.filter(d=>d.linea===l).length);
+    const lineasPersonas = lineasNames.map(l => currentData.filter(d=>d.linea===l).reduce((s,d)=>s+d.total_personas,0));
+    charts['lineas'] = new Chart(document.getElementById('lineasChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Somos Familia','Creciendo Seguros','Constr. Relaciones','Com. y Difusión'],
+            datasets: [
+                { label:'Actividades', data: lineasCount, backgroundColor: lineasNames.map(l=>LINEA_COLORS[l]), borderRadius: 8, yAxisID: 'y' },
+                { label:'Personas', data: lineasPersonas, type:'line', borderColor:'#0f172a', backgroundColor:'rgba(15,23,42,0.05)', yAxisID:'y1', tension:0.4, pointBackgroundColor:'#0f172a', pointRadius: 5, fill: true },
+            ]
+        },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'top'} }, scales: {
+            y: { position:'left', title:{ display:true, text:'Actividades', font:{size:10} } },
+            y1: { position:'right', title:{ display:true, text:'Personas', font:{size:10} }, grid:{ drawOnChartArea:false } }
+        }}
+    });
+
+    // 2. ESTADOS PIE
+    destroyChart('estados');
+    const estadosCount = {
+        'EJECUTADA': currentData.filter(d=>d.estado.includes('EJECUTADA')).length,
+        'AGENDADA': currentData.filter(d=>d.estado.includes('AGENDADA')).length,
+        'CANCELADA': currentData.filter(d=>d.estado.includes('CANCELADA')).length,
+    };
+    const estadosFilt = Object.entries(estadosCount).filter(([,v])=>v>0);
+    document.getElementById('estadosPieChart').innerHTML = '';
+    apexCharts['estados'] = new ApexCharts(document.getElementById('estadosPieChart'), {
+        series: estadosFilt.map(e=>e[1]),
+        chart: { type:'donut', height:270, toolbar:{show:false}, animations:{enabled:true} },
+        labels: estadosFilt.map(e=>e[0]),
+        colors: ['#10b981','#f59e0b','#ef4444'],
+        plotOptions: { pie:{ donut:{ size:'65%', labels:{ show:true, total:{ show:true, label:'Total', formatter:w=>w.globals.seriesTotals.reduce((a,b)=>a+b,0) } } } } },
+        legend: { position:'bottom', fontSize:'12px' }, dataLabels:{ formatter:(v)=>Math.round(v)+'%' }
+    });
+    apexCharts['estados'].render();
+
+    // 3. EVOLUCIÓN
+    destroyChart('evolucion');
+    const fechasMap = {};
+    currentData.forEach(d=>{
+        if (!d.fecha) return;
+        const parts = d.fecha.split('/');
+        const key = parts.length>=3 ? `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}` : d.fecha;
+        fechasMap[key] = (fechasMap[key]||0)+1;
+    });
+    const sortedF = Object.entries(fechasMap).sort((a,b)=>a[0].localeCompare(b[0]));
+    charts['evolucion'] = new Chart(document.getElementById('evolucionChart').getContext('2d'), {
+        type:'line',
+        data: {
+            labels: sortedF.map(f=>{ const p=f[0].split('-'); return `${p[2]}/${p[1]}`; }),
+            datasets:[{ label:'Actividades por Día', data:sortedF.map(f=>f[1]), borderColor:'#db2777', backgroundColor:'rgba(219,39,119,0.08)', fill:true, tension:0.4, pointBackgroundColor:'#db2777', pointRadius:5, pointHoverRadius:8 }]
+        },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1}}} }
+    });
+
+    // 4. POBLACIÓN PIE
+    destroyChart('poblacion');
+    const popData = [
+        ['NNA', currentData.reduce((s,d)=>s+d.nna,0)],
+        ['Mujeres', currentData.reduce((s,d)=>s+d.mujer,0)],
+        ['Hombres', currentData.reduce((s,d)=>s+d.hombres,0)],
+        ['Ciudadanía Gral.', currentData.reduce((s,d)=>s+d.ciudadania,0)],
+        ['Adultos Mayores', currentData.reduce((s,d)=>s+d.adultos_mayores,0)],
+        ['Estudiantes', currentData.reduce((s,d)=>s+d.estudiantes,0)],
+        ['Líderes', currentData.reduce((s,d)=>s+d.lideres,0)],
+        ['JAC/JAL', currentData.reduce((s,d)=>s+d.jac_jal,0)],
+        ['Pob. Diversa', currentData.reduce((s,d)=>s+d.pob_diversa,0)],
+    ].filter(([,v])=>v>0);
+    document.getElementById('poblacionPieChart').innerHTML = '';
+    if (popData.length > 0) {
+        apexCharts['poblacion'] = new ApexCharts(document.getElementById('poblacionPieChart'), {
+            series: popData.map(p=>p[1]),
+            chart:{type:'pie', height:270, toolbar:{show:false}},
+            labels: popData.map(p=>p[0]),
+            colors:['#f97316','#db2777','#3b82f6','#10b981','#8b5cf6','#facc15','#06b6d4','#ec4899','#a3e635'],
+            legend:{position:'bottom', fontSize:'11px'}, dataLabels:{formatter:(v)=>Math.round(v)+'%'}
+        });
+        apexCharts['poblacion'].render();
+    } else {
+        document.getElementById('poblacionPieChart').innerHTML = '<div class="no-data">Sin datos de población</div>';
+    }
+
+    // 5. ZONA PIE
+    destroyChart('zona');
+    const zonaU = currentData.filter(d=>d.zona==='Urbana').length;
+    const zonaR = currentData.filter(d=>d.zona==='Rural').length;
+    document.getElementById('zonaPieChart').innerHTML = '';
+    if (zonaU + zonaR > 0) {
+        apexCharts['zona'] = new ApexCharts(document.getElementById('zonaPieChart'), {
+            series:[zonaU, zonaR],
+            chart:{type:'donut', height:200, toolbar:{show:false}},
+            labels:['Urbana','Rural'],
+            colors:['#db2777','#10b981'],
+            legend:{position:'bottom'},
+            plotOptions:{pie:{donut:{size:'60%'}}}
+        });
+        apexCharts['zona'].render();
+    }
+
+    // 6. TIPO DE LUGAR
+    destroyChart('lugares');
+    const lugaresC = {};
+    currentData.forEach(d=>{ if(d.tipo_lugar) lugaresC[d.tipo_lugar]=(lugaresC[d.tipo_lugar]||0)+1; });
+    const topLug = Object.entries(lugaresC).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    charts['lugares'] = new Chart(document.getElementById('lugaresChart').getContext('2d'), {
+        type:'bar',
+        data:{ labels:topLug.map(l=>l[0]), datasets:[{ label:'Actividades', data:topLug.map(l=>l[1]), backgroundColor:['#db2777','#f97316','#10b981','#3b82f6','#8b5cf6','#facc15'], borderRadius:8 }] },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1}}} }
+    });
+
+    // 7. TOP LUGARES (otro_zona)
+    destroyChart('topLugares');
+    const otroZonaC = {};
+    currentData.forEach(d=>{ if(d.otro_zona) otroZonaC[d.otro_zona]=(otroZonaC[d.otro_zona]||0)+1; });
+    const topOtro = Object.entries(otroZonaC).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    charts['topLugares'] = new Chart(document.getElementById('topLugaresChart').getContext('2d'), {
+        type:'bar',
+        data:{
+            labels: topOtro.map(l=>l[0].length>20?l[0].substring(0,20)+'…':l[0]),
+            datasets:[{ label:'Actividades', data:topOtro.map(l=>l[1]), backgroundColor:'#8b5cf6', borderRadius:8 }]
+        },
+        options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true,ticks:{stepSize:1}}} }
+    });
+
+    // 8. PERSONAS POR ACTIVIDAD
+    destroyChart('personas');
+    const conP = [...currentData].filter(d=>d.total_personas>0).sort((a,b)=>b.total_personas-a.total_personas).slice(0,15);
+    charts['personas'] = new Chart(document.getElementById('personasChart').getContext('2d'), {
+        type:'bar',
+        data:{
+            labels: conP.map(d=>(d.nombre_actividad||'Sin nombre').substring(0,30)),
+            datasets:[{ label:'Personas Impactadas', data:conP.map(d=>d.total_personas), backgroundColor: conP.map(d=>LINEA_COLORS[d.linea]||'#db2777'), borderRadius:8 }]
+        },
+        options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+    });
+
+    // 9. POBLACIÓN POR LÍNEA (stacked)
+    destroyChart('poblacionLinea');
+    const lineaNames = ['SOMOS FAMILIA','CRECIENDO SEGUROS','CONSTRUYENDO RELACIONES SANAS','COMUNICACION Y DIFUCION'];
+    const popGroups = [
+        { label:'NNA', campo:'nna', color:'#f97316' },
+        { label:'Mujeres', campo:'mujer', color:'#db2777' },
+        { label:'Hombres', campo:'hombres', color:'#3b82f6' },
+        { label:'Ciudadanía', campo:'ciudadania', color:'#10b981' },
+        { label:'Adultos Mayores', campo:'adultos_mayores', color:'#8b5cf6' },
+    ];
+    charts['poblacionLinea'] = new Chart(document.getElementById('poblacionLineaChart').getContext('2d'), {
+        type:'bar',
+        data:{
+            labels:['Somos Familia','Creciendo Seguros','Constr. Relaciones','Com. y Difusión'],
+            datasets: popGroups.map(pg=>({
+                label: pg.label,
+                data: lineaNames.map(l=>currentData.filter(d=>d.linea===l).reduce((s,d)=>s+(d[pg.campo]||0),0)),
+                backgroundColor: pg.color, borderRadius:4
+            }))
+        },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}} }
+    });
+}
+
+// ─────────────────── TABLA COMPLETA ───────────────────
+function renderFullTable() {
+    totalPages = Math.max(1, Math.ceil(currentData.length / rowsPerPage));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage-1)*rowsPerPage;
+    const pageData = currentData.slice(start, start+rowsPerPage);
+
+    let html = `<table style="min-width:1100px"><thead><tr>
+        <th>ID</th><th>Actividad</th><th>Fecha</th><th>Hora</th><th>Duración</th>
+        <th>Línea</th><th>Estado</th><th>Lugar</th><th>Zona</th><th>Responsable</th><th>Personas</th>
+    </tr></thead><tbody>`;
+    pageData.forEach(d=>{
+        const eClass = d.estado.includes('EJECUTADA')?'badge-ejecutada':d.estado.includes('AGENDADA')?'badge-agendada':d.estado.includes('CANCELADA')?'badge-cancelada':'badge-default';
+        const lShort = {'SOMOS FAMILIA':'Somos Fam.','CRECIENDO SEGUROS':'Creciendo Seg.','CONSTRUYENDO RELACIONES SANAS':'Constr. Rel.','COMUNICACION Y DIFUCION':'Com. y Dif.'};
+        const lugar = d.otro_zona || d.tipo_lugar || '-';
+        html += `<tr>
+            <td><span style="font-family:'DM Mono',monospace;font-size:0.7rem;color:#94a3b8">${esc(d.id)}</span></td>
+            <td style="max-width:180px" title="${esc(d.nombre_actividad)}">${esc((d.nombre_actividad||'-').substring(0,35))}</td>
+            <td>${esc(d.fecha||'-')}</td>
+            <td style="font-family:'DM Mono',monospace;font-size:0.7rem">${esc(d.hora_inicio||'-')}</td>
+            <td><span style="font-family:'DM Mono',monospace;font-size:0.7rem;color:#64748b">${d.duracion_min>0?d.duracion_min+'min':'-'}</span></td>
+            <td><span style="font-size:0.7rem;color:${LINEA_COLORS[d.linea]||'#64748b'};font-weight:700">${esc(lShort[d.linea]||d.linea||'-')}</span></td>
+            <td><span class="badge ${eClass}">${esc(d.estado||'Sin estado')}</span></td>
+            <td style="max-width:140px" title="${esc(lugar)}">${esc(lugar.substring(0,28))}</td>
+            <td>${esc(d.zona||'-')}</td>
+            <td style="max-width:120px" title="${esc(d.responsable)}">${esc((d.responsable||'-').split(' ').slice(0,2).join(' '))}</td>
+            <td><span class="num-badge">${d.total_personas>0?d.total_personas.toLocaleString('es-CO'):'–'}</span></td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('fullTableContainer').innerHTML = html;
+    renderPagination();
+}
+
+function renderPagination() {
+    const s = (currentPage-1)*rowsPerPage+1;
+    const e = Math.min(currentPage*rowsPerPage, currentData.length);
+    const c = document.getElementById('paginationControls');
+    c.innerHTML = `
+        <button onclick="changePage(1)" ${currentPage===1?'disabled':''}><i class="fas fa-angles-left"></i></button>
+        <button onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}><i class="fas fa-angle-left"></i> Anterior</button>
+        <span class="page-info">Pág. ${currentPage} de ${totalPages} · ${s}–${e} de ${currentData.length} registros</span>
+        <button onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>Siguiente <i class="fas fa-angle-right"></i></button>
+        <button onclick="changePage(${totalPages})" ${currentPage===totalPages?'disabled':''}><i class="fas fa-angles-right"></i></button>
+        <select onchange="rowsPerPage=parseInt(this.value);currentPage=1;renderFullTable()" style="margin-left:8px;padding:6px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:'Sora',sans-serif;font-size:0.78rem">
+            ${[10,15,20,50].map(n=>`<option value="${n}"${rowsPerPage===n?' selected':''}>${n}/pág</option>`).join('')}
+        </select>`;
+}
+window.changePage = p => { if (p<1||p>totalPages) return; currentPage=p; renderFullTable(); };
+
+function esc(t) {
+    if (!t) return '';
+    return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Fin script
+</script>
+</body>
+</html>
